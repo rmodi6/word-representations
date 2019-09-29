@@ -19,6 +19,15 @@ def cross_entropy_loss(inputs, true_w):
 
     ==========================================================================
     """
+    dot_product = tf.matmul(inputs, true_w, transpose_b=True)
+    self_dot_prod = tf.linalg.diag_part(dot_product)
+    A = tf.log(tf.exp(self_dot_prod))
+    A = tf.reshape(A, [-1, 1])
+
+    sum_of_exps = tf.reduce_sum(tf.exp(dot_product), axis=1)
+    B = tf.log(sum_of_exps)
+    B = tf.reshape(B, [-1, 1])
+
     return tf.subtract(B, A)
 
 def nce_loss(inputs, weights, biases, labels, sample, unigram_prob):
