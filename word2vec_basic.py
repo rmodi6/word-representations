@@ -155,7 +155,44 @@ def generate_batch(data, batch_size, num_skips, skip_window):
 
   ===============================================================================
   """
+  batch_count = 0
+  while batch_count < batch_size:
+    if (data_index - skip_window) < 0 or (data_index + skip_window) >= len(data):
+      data_index = skip_window
+    left_context_word = data_index - 1
+    right_context_word = data_index + 1
+    for x in range(skip_window):
+      batch[batch_count] = data[data_index]
+      labels[batch_count, 0] = data[left_context_word]
+      batch[batch_count+1] = data[data_index]
+      labels[batch_count+1, 0] = data[right_context_word]
+      batch_count += 2
+      left_context_word -= 1
+      right_context_word += 1
+    data_index += 1
+  return batch, labels
 
+  # span = 2 * skip_window + 1  # [ skip_window target skip_window ]
+  # buffer = collections.deque(maxlen=span)  # pylint: disable=redefined-builtin
+  # if data_index + span > len(data):
+  #   data_index = 0
+  # buffer.extend(data[data_index:data_index + span])
+  # data_index += span
+  # for i in range(batch_size // num_skips):
+  #   context_words = [w for w in range(span) if w != skip_window]
+  #   words_to_use = random.sample(context_words, num_skips)
+  #   for j, context_word in enumerate(words_to_use):
+  #     batch[i * num_skips + j] = buffer[skip_window]
+  #     labels[i * num_skips + j, 0] = buffer[context_word]
+  #   if data_index == len(data):
+  #     buffer.extend(data[0:span])
+  #     data_index = span
+  #   else:
+  #     buffer.append(data[data_index])
+  #     data_index += 1
+  # # Backtrack a little bit to avoid skipping words in the end of a batch
+  # data_index = (data_index + len(data) - span) % len(data)
+  # return batch, labels
 
 
 def build_model(sess, graph, loss_model):
@@ -308,16 +345,18 @@ if __name__ == '__main__':
   filename = maybe_download('text8.zip', 31344016)
 
 
-  words = read_data(filename)
-  print('Data size', len(words))
+  # words = read_data(filename)
+  # print('Data size', len(words))
 
 
   ####################################################################################
   # Step 2: Build the dictionary and replace rare words with UNK token.
   vocabulary_size = 100000 
 
-  data, count, dictionary, reverse_dictionary = build_dataset(words)
-  del words  # Hint to reduce memory.
+  # data, count, dictionary, reverse_dictionary = build_dataset(words)
+  import joblib
+  data, count, dictionary, reverse_dictionary = joblib.load('dumps/data.pkl')
+  # del words  # Hint to reduce memory.
   print('Most common words (+UNK)', count[:5])
   print('Sample data', data[:10], [reverse_dictionary[i] for i in data[:10]])
 
