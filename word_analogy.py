@@ -28,3 +28,34 @@ v1 = embeddings[dictionary[word_id]]
 
 ==========================================================================
 """
+
+
+def cossim(v1, v2):
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+def difference(word1, word2):
+    v1 = embeddings[dictionary[word1]]
+    v2 = embeddings[dictionary[word2]]
+    return np.subtract(v1, v2)
+
+with open('word_analogy_dev_predictions_{}.txt'.format(loss_model), 'w') as fw:
+    with open('word_analogy_dev.txt', 'r') as fr:
+        for line in fr:
+            examples, choices = line.strip().split('||')
+            examples = examples.strip('"').split('","')
+            choices = choices.strip('"').split('","')
+            total_diff = 0
+            for example in examples:
+                words = example.split(':')
+                total_diff += difference(words[1], words[0])
+            avg_diff = total_diff / len(examples)
+            similarities = []
+            for choice in choices:
+                words = choice.split(':')
+                diff = difference(words[1], words[0])
+                similarities.append(cossim(diff, avg_diff))
+            most_illustrative = choices[similarities.index(max(similarities))]
+            least_illustrative = choices[similarities.index(min(similarities))]
+            choices.extend([most_illustrative, least_illustrative])
+            write_line = '"{0}"\n'.format('"\t"'.join(choices))
+            fw.write(write_line)
