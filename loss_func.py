@@ -22,11 +22,9 @@ def cross_entropy_loss(inputs, true_w):
     dot_product = tf.matmul(inputs, true_w, transpose_b=True)
     self_dot_prod = tf.linalg.diag_part(dot_product)
     A = tf.log(tf.exp(self_dot_prod))
-    A = tf.reshape(A, [-1, 1])
 
     sum_of_exps = tf.reduce_sum(tf.exp(dot_product), axis=1)
     B = tf.log(sum_of_exps)
-    B = tf.reshape(B, [-1, 1])
 
     return tf.subtract(B, A)
 
@@ -45,3 +43,46 @@ def nce_loss(inputs, weights, biases, labels, sample, unigram_prob):
 
     ==========================================================================
     """
+    batch_size = inputs.shape[0]
+    samples_tensor = tf.convert_to_tensor(sample)
+    unigram_prob_tensor = tf.convert_to_tensor(unigram_prob)
+    noise = float(10 ** -10)
+
+    preds_o = tf.nn.embedding_lookup(weights, tf.reshape(labels, [batch_size]))
+    biases_o = tf.nn.embedding_lookup(biases, labels)
+    probs_o = tf.nn.embedding_lookup(unigram_prob_tensor, labels)
+
+    preds_x = tf.nn.embedding_lookup(weights, samples_tensor)
+    biases_x = tf.nn.embedding_lookup(biases, tf.reshape(sample, [-1, 1]))
+    probs_x = tf.nn.embedding_lookup(unigram_prob_tensor, tf.reshape(sample, [-1, 1]))
+
+    k = float(sample.shape[0])
+
+
+    dot_product_1 = tf.matmul(inputs, preds_o, transpose_b=True)
+    self_dot_prod_1 = tf.linalg.diag_part(dot_product_1)
+    self_dot_prod_1 = tf.reshape(self_dot_prod_1, [-1, 1])
+    s1 = tf.add(self_dot_prod_1, biases_o)  # s(w_o , w_c ) = (uT_c u_o) + b_o
+    p1 = tf.math.log(tf.add(noise, tf.scalar_mul(k, probs_o)))  # log [kPr(w_o)]
+
+    x1 = tf.subtract(s1, p1)  # x = s(w_o , w_c ) - log [kPr(w_o)]
+    # sigma_1 = tf.divide(1., tf.add(1., tf.exp(tf.math.negative(x1))))  # Pr(D = 1, w_o |w_c ) = sigma(x) = 1 / (1 + e^(-x))
+    sigma_1 = tf.sigmoid(x1)
+    lhs = tf.math.log(tf.add(noise, sigma_1))
+
+    #########################################
+
+    dot_product_2 = tf.matmul(inputs, preds_x, transpose_b=True)
+    # dot_product_2 = tf.reduce_sum(dot_product_2, axis=1)
+    dot_product_2 = tf.linalg.matrix_transpose(dot_product_2)
+    s2 = tf.add(dot_product_2, biases_x)  # s(w_x , w_c ) = (uT_c u_x) + b_x
+    p2 = tf.math.log(tf.add(noise, tf.scalar_mul(k, probs_x)))  # log [kPr(w_x)]
+
+    x2 = tf.subtract(s2, p2)  # x = s(w_x , w_c ) - log [kPr(w_x)]
+    # sigma_2 = tf.divide(1., tf.add(1., tf.exp(tf.math.negative(x2))))  # Pr(D = 1, w_x |w_c ) = sigma(x) = 1 / (1 + e^(-x))
+    sigma_2 = tf.sigmoid(x2)
+    rhs = tf.reduce_sum(tf.math.log(tf.add(noise, tf.subtract(1., sigma_2))), axis=0)
+    rhs = tf.reshape(rhs, [-1, 1])
+
+    j = tf.math.negative(tf.add(lhs, rhs))
+    return j
