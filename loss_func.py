@@ -19,7 +19,7 @@ def cross_entropy_loss(inputs, true_w):
 
     ==========================================================================
     """
-    dot_product = tf.matmul(inputs, true_w, transpose_b=True)
+    dot_product = tf.matmul(true_w, inputs, transpose_b=True)
     self_dot_prod = tf.linalg.diag_part(dot_product)
     A = tf.log(tf.exp(self_dot_prod))
 
@@ -44,22 +44,22 @@ def nce_loss(inputs, weights, biases, labels, sample, unigram_prob):
     ==========================================================================
     """
     batch_size = inputs.shape[0]
-    samples_tensor = tf.convert_to_tensor(sample)
-    unigram_prob_tensor = tf.convert_to_tensor(unigram_prob)
+    samples_tensor = tf.convert_to_tensor(sample)  # [k, 1]
+    unigram_prob_tensor = tf.convert_to_tensor(unigram_prob)  # [vocab, 1]
     noise = float(10 ** -10)
 
-    preds_o = tf.nn.embedding_lookup(weights, tf.reshape(labels, [batch_size]))
-    biases_o = tf.nn.embedding_lookup(biases, labels)
-    probs_o = tf.nn.embedding_lookup(unigram_prob_tensor, labels)
+    preds_o = tf.nn.embedding_lookup(weights, tf.reshape(labels, [batch_size]))  # [batch_size, embed_size]
+    biases_o = tf.nn.embedding_lookup(biases, labels)  # [batch_size, 1]
+    probs_o = tf.nn.embedding_lookup(unigram_prob_tensor, labels)  # [batch_size, 1]
 
-    preds_x = tf.nn.embedding_lookup(weights, samples_tensor)
-    biases_x = tf.nn.embedding_lookup(biases, tf.reshape(sample, [-1, 1]))
-    probs_x = tf.nn.embedding_lookup(unigram_prob_tensor, tf.reshape(sample, [-1, 1]))
+    preds_x = tf.nn.embedding_lookup(weights, samples_tensor)  # [k, embed_size]
+    biases_x = tf.nn.embedding_lookup(biases, tf.reshape(sample, [-1, 1]))  # [k, 1]
+    probs_x = tf.nn.embedding_lookup(unigram_prob_tensor, tf.reshape(sample, [-1, 1]))  # [k, 1]
 
     k = float(sample.shape[0])
 
 
-    dot_product_1 = tf.matmul(inputs, preds_o, transpose_b=True)
+    dot_product_1 = tf.matmul(inputs, preds_o, transpose_b=True)  # [batch_size, batch_size]
     self_dot_prod_1 = tf.linalg.diag_part(dot_product_1)
     self_dot_prod_1 = tf.reshape(self_dot_prod_1, [-1, 1])
     s1 = tf.add(self_dot_prod_1, biases_o)  # s(w_o , w_c ) = (uT_c u_o) + b_o
@@ -72,9 +72,9 @@ def nce_loss(inputs, weights, biases, labels, sample, unigram_prob):
 
     #########################################
 
-    dot_product_2 = tf.matmul(inputs, preds_x, transpose_b=True)
+    dot_product_2 = tf.matmul(preds_x, inputs, transpose_b=True)  # [k, batch_size]
     # dot_product_2 = tf.reduce_sum(dot_product_2, axis=1)
-    dot_product_2 = tf.linalg.matrix_transpose(dot_product_2)
+    # dot_product_2 = tf.linalg.matrix_transpose(dot_product_2)
     s2 = tf.add(dot_product_2, biases_x)  # s(w_x , w_c ) = (uT_c u_x) + b_x
     p2 = tf.math.log(tf.add(noise, tf.scalar_mul(k, probs_x)))  # log [kPr(w_x)]
 
