@@ -360,7 +360,7 @@ if __name__ == '__main__':
   ####################################################################################
   # Hyper Parameters to config
   batch_size = 128
-  embedding_size = 128  # Dimension of the embedding vector.
+  embedding_size = 64  # Dimension of the embedding vector.
   skip_window = 4       # How many words to consider left and right.
   num_skips = 8         # How many times to reuse an input to generate a label.
 
@@ -381,7 +381,7 @@ if __name__ == '__main__':
 
   
   # maximum training step
-  max_num_steps  = 200001
+  max_num_steps  = 4000001
   checkpoint_step = 50000
     
 
@@ -395,7 +395,7 @@ if __name__ == '__main__':
     # You must start with the pretrained model. 
     # If you want to resume from your checkpoints, change this path name
 
-    load_pretrained_model(sess, model, pretrained_model_path)
+    # load_pretrained_model(sess, model, pretrained_model_path)
 
 
     ####################################################################################
