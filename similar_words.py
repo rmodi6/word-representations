@@ -4,7 +4,7 @@ import numpy as np
 
 
 model_path = './models/'
-loss_model = 'cross_entropy_embed_64'
+loss_model = 'cross_entropy'
 # loss_model = 'nce'
 
 model_filepath = os.path.join(model_path, 'word2vec_%s.model'%(loss_model))
