@@ -295,8 +295,8 @@ def train(sess, model, data, dictionary, batch_size, num_skips, skip_window,
           close_word = reverse_dictionary[nearest[k]]
           log_str = "%s %s," % (log_str, close_word)
         print(log_str)
-      # chkpt_path = os.path.join(checkpoint_model_path, 'w2v_%s.cpkt'%(loss_model))
-      # model.saver.save(sess, chkpt_path, global_step=model.global_step.eval())
+      chkpt_path = os.path.join(checkpoint_model_path, 'w2v_%s.cpkt'%(loss_model))
+      model.saver.save(sess, chkpt_path, global_step=model.global_step.eval())
 
 
   # model.summary_writer.close()
