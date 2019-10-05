@@ -71,13 +71,12 @@ def nce_loss(inputs, weights, biases, labels, sample, unigram_prob):
     # Calculate s(w_o , w_c ) = (uT_c u_o) + b_o
     s1 = tf.add(self_dot_prod_1, biases_o)  # [batch_size, 1]
     # log [kPr(w_o)]
-    p1 = tf.math.log(tf.add(noise, tf.scalar_mul(k, probs_o)))  # [batch_size, 1]
+    p1 = tf.log(tf.add(tf.scalar_mul(k, probs_o), noise))  # [batch_size, 1]
     # x = s(w_o , w_c ) - log [kPr(w_o)]
     x1 = tf.subtract(s1, p1)  # [batch_size, 1]
-    tf.nn.nce_loss
-    # sigma_1 = tf.divide(1., tf.add(1., tf.exp(tf.math.negative(x1))))  # Pr(D = 1, w_o |w_c ) = sigma(x) = 1 / (1 + e^(-x))
+    # sigma_1 = tf.divide(1., tf.add(1., tf.exp(tf.negative(x1))))  # Pr(D = 1, w_o |w_c ) = sigma(x) = 1 / (1 + e^(-x))
     sigma_1 = tf.sigmoid(x1)  # [batch_size, 1]
-    lhs = tf.math.log(tf.add(noise, sigma_1))  # [batch_size, 1]
+    lhs = tf.log(tf.add(noise, sigma_1))  # [batch_size, 1]
 
     #########################################
 
@@ -85,14 +84,14 @@ def nce_loss(inputs, weights, biases, labels, sample, unigram_prob):
     # s(w_x , w_c ) = (uT_c u_x) + b_x
     s2 = tf.add(dot_product_2, biases_x)  # [k, batch_size]
     # log [kPr(w_x)]
-    p2 = tf.math.log(tf.add(noise, tf.scalar_mul(k, probs_x)))  # [k, 1]
+    p2 = tf.log(tf.add(tf.scalar_mul(k, probs_x), noise))  # [k, 1]
 
     # x = s(w_x , w_c ) - log [kPr(w_x)]
     x2 = tf.subtract(s2, p2)  # [k, batch_size]
-    # sigma_2 = tf.divide(1., tf.add(1., tf.exp(tf.math.negative(x2))))  # Pr(D = 1, w_x |w_c ) = sigma(x) = 1 / (1 + e^(-x))
+    # sigma_2 = tf.divide(1., tf.add(1., tf.exp(tf.negative(x2))))  # Pr(D = 1, w_x |w_c ) = sigma(x) = 1 / (1 + e^(-x))
     sigma_2 = tf.sigmoid(x2)  # [k, batch_size]
-    rhs = tf.reduce_sum(tf.math.log(tf.add(noise, tf.subtract(1., sigma_2))), axis=0)  # [1, batch_size]
+    rhs = tf.reduce_sum(tf.log(tf.add(noise, tf.subtract(1., sigma_2))), axis=0)  # [1, batch_size]
     rhs = tf.reshape(rhs, [-1, 1])  # [batch_size, 1]
 
-    j = tf.math.negative(tf.add(lhs, rhs))
+    j = tf.negative(tf.add(lhs, rhs))
     return j
