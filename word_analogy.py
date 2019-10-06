@@ -54,8 +54,8 @@ with open('word_analogy_dev_predictions_{}.txt'.format(loss_model), 'w') as fw:
                 words = choice.split(':')
                 diff = difference(words[1], words[0])
                 similarities.append(cossim(diff, avg_diff))
-            most_illustrative = choices[similarities.index(max(similarities))]
             least_illustrative = choices[similarities.index(min(similarities))]
-            choices.extend([most_illustrative, least_illustrative])
+            most_illustrative = choices[similarities.index(max(similarities))]
+            choices.extend([least_illustrative, most_illustrative])
             write_line = '"{0}"\n'.format('"\t"'.join(choices))
             fw.write(write_line)
