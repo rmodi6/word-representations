@@ -51,47 +51,60 @@ def nce_loss(inputs, weights, biases, labels, sample, unigram_prob):
 
     ==========================================================================
     """
+    ############# Initialization #############
+    # Initialize required variables
     batch_size = inputs.shape[0]
-    samples_tensor = tf.convert_to_tensor(sample)  # [k, 1]
-    unigram_prob_tensor = tf.convert_to_tensor(unigram_prob)  # [vocab, 1]
-    k = float(sample.shape[0])
-    noise = float(10 ** -10)
+    neg_samples = tf.convert_to_tensor(sample)  # [k, 1]
+    unigram_probs = tf.convert_to_tensor(unigram_prob)  # [vocab, 1]
+    k = float(sample.shape[0])  # number of negative samples
+    noise = float(10 ** -10)  # small number to avoid log(0)
 
-    preds_o = tf.nn.embedding_lookup(weights, tf.reshape(labels, [batch_size]))  # [batch_size, embed_size]
-    biases_o = tf.nn.embedding_lookup(biases, labels)  # [batch_size, 1]
-    probs_o = tf.nn.embedding_lookup(unigram_prob_tensor, labels)  # [batch_size, 1]
+    # Initialize target words variables
+    target_weights = tf.nn.embedding_lookup(weights, tf.reshape(labels, [batch_size]))  # [batch_size, embed_size]
+    target_biases = tf.nn.embedding_lookup(biases, labels)  # [batch_size, 1]
+    target_unigram_probs = tf.nn.embedding_lookup(unigram_probs, labels)  # [batch_size, 1]
 
-    preds_x = tf.nn.embedding_lookup(weights, samples_tensor)  # [k, embed_size]
-    biases_x = tf.nn.embedding_lookup(biases, tf.reshape(sample, [-1, 1]))  # [k, 1]
-    probs_x = tf.nn.embedding_lookup(unigram_prob_tensor, tf.reshape(sample, [-1, 1]))  # [k, 1]
+    # Initialize negative words variables
+    sample_weights = tf.nn.embedding_lookup(weights, neg_samples)  # [k, embed_size]
+    sample_biases = tf.nn.embedding_lookup(biases, tf.reshape(sample, [-1, 1]))  # [k, 1]
+    sample_unigram_probs = tf.nn.embedding_lookup(unigram_probs, tf.reshape(sample, [-1, 1]))  # [k, 1]
 
-    dot_product_1 = tf.matmul(preds_o, inputs, transpose_b=True)  # [batch_size, batch_size]
+    ############# Calculations with center and target words #############
+    # Calculate dot product of center word u_c with target word u_o : (uT_c u_o)
+    dot_product_1 = tf.matmul(target_weights, inputs, transpose_b=True)  # [batch_size, batch_size]
     self_dot_prod_1 = tf.linalg.diag_part(dot_product_1)  # [batch_size,]
     self_dot_prod_1 = tf.reshape(self_dot_prod_1, [-1, 1])  # [batch_size, 1]
-    # Calculate s(w_o , w_c ) = (uT_c u_o) + b_o
-    s1 = tf.add(self_dot_prod_1, biases_o)  # [batch_size, 1]
-    # log [kPr(w_o)]
-    p1 = tf.log(tf.add(tf.scalar_mul(k, probs_o), noise))  # [batch_size, 1]
+    # Add bias : s(w_o , w_c ) = (uT_c u_o) + b_o
+    s1 = tf.add(self_dot_prod_1, target_biases)  # [batch_size, 1]
+
+    # Calculate unigram prob of target word and take log : log [kPr(w_o)]
+    p1 = tf.log(tf.add(tf.scalar_mul(k, target_unigram_probs), noise))  # [batch_size, 1]
+
     # x = s(w_o , w_c ) - log [kPr(w_o)]
     x1 = tf.subtract(s1, p1)  # [batch_size, 1]
-    # sigma_1 = tf.divide(1., tf.add(1., tf.exp(tf.negative(x1))))  # Pr(D = 1, w_o |w_c ) = sigma(x) = 1 / (1 + e^(-x))
+    # Calculate prob of word pair in vocab : Pr(D = 1, w_o |w_c ) = sigma(x) = 1 / (1 + e^(-x))
     sigma_1 = tf.sigmoid(x1)  # [batch_size, 1]
     lhs = tf.log(tf.add(noise, sigma_1))  # [batch_size, 1]
 
-    #########################################
+    ############# Calculations with center and negative sample words #############
 
-    dot_product_2 = tf.matmul(preds_x, inputs, transpose_b=True)  # [k, batch_size]
-    # s(w_x , w_c ) = (uT_c u_x) + b_x
-    s2 = tf.add(dot_product_2, biases_x)  # [k, batch_size]
-    # log [kPr(w_x)]
-    p2 = tf.log(tf.add(tf.scalar_mul(k, probs_x), noise))  # [k, 1]
+    # Calculate dot product of center word u_c with negative sample words u_x : (uT_c u_x)
+    dot_product_2 = tf.matmul(sample_weights, inputs, transpose_b=True)  # [k, batch_size]
+    # Add bias : s(w_x , w_c ) = (uT_c u_x) + b_x
+    s2 = tf.add(dot_product_2, sample_biases)  # [k, batch_size]
+
+    # Calculate unigram prob of negative words and take log : log [kPr(w_x)]
+    p2 = tf.log(tf.add(tf.scalar_mul(k, sample_unigram_probs), noise))  # [k, 1]
 
     # x = s(w_x , w_c ) - log [kPr(w_x)]
     x2 = tf.subtract(s2, p2)  # [k, batch_size]
-    # sigma_2 = tf.divide(1., tf.add(1., tf.exp(tf.negative(x2))))  # Pr(D = 1, w_x |w_c ) = sigma(x) = 1 / (1 + e^(-x))
+    # Calculate prob of word pair in vocab : Pr(D = 1, w_x |w_c ) = sigma(x) = 1 / (1 + e^(-x))
     sigma_2 = tf.sigmoid(x2)  # [k, batch_size]
+    # Calculate prob of word pair not being in vocab and take log : log(1 - Pr(D = 1, w_x |w c ))
     rhs = tf.reduce_sum(tf.log(tf.add(noise, tf.subtract(1., sigma_2))), axis=0)  # [1, batch_size]
     rhs = tf.reshape(rhs, [-1, 1])  # [batch_size, 1]
 
-    j = tf.negative(tf.add(lhs, rhs))
+
+    # Calculate final loss for the batch
+    j = tf.negative(tf.add(lhs, rhs))  # [batch_size, 1]
     return j
