@@ -363,8 +363,8 @@ if __name__ == '__main__':
   # Hyper Parameters to config
   batch_size = 128
   embedding_size = 128  # Dimension of the embedding vector.
-  skip_window = 4       # How many words to consider left and right.
-  num_skips = 8         # How many times to reuse an input to generate a label.
+  skip_window = 8       # How many words to consider left and right.
+  num_skips = 16         # How many times to reuse an input to generate a label.
 
 
   # We pick a random validation set to sample nearest neighbors. Here we limit the
