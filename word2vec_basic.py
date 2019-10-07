@@ -359,7 +359,7 @@ if __name__ == '__main__':
 
   ####################################################################################
   # Hyper Parameters to config
-  batch_size = 128
+  batch_size = 256
   embedding_size = 128  # Dimension of the embedding vector.
   skip_window = 4       # How many words to consider left and right.
   num_skips = 8         # How many times to reuse an input to generate a label.
