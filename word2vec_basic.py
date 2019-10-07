@@ -383,7 +383,7 @@ if __name__ == '__main__':
 
   
   # maximum training step
-  max_num_steps  = 200001
+  max_num_steps  = 1000001
   checkpoint_step = 50000
     
 
