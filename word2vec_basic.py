@@ -221,7 +221,7 @@ def build_model(sess, graph, loss_model):
     # tf.summary.scalar('loss', loss)
 
     # Construct the SGD optimizer using a learning rate of 1.0.
-    optimizer = tf.train.GradientDescentOptimizer(1.0).minimize(loss, global_step=global_step)
+    optimizer = tf.train.GradientDescentOptimizer(1.5).minimize(loss, global_step=global_step)
 
     # Compute the cosine similarity between minibatch examples and all embeddings.
     norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keep_dims=True))
