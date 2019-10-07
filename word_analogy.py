@@ -40,22 +40,22 @@ def difference(word1, word2):
 
 with open('word_analogy_dev_predictions_{}.txt'.format(loss_model), 'w') as fw:
     with open('word_analogy_dev.txt', 'r') as fr:
-        for line in fr:
-            examples, choices = line.strip().split('||')
-            examples = examples.strip('"').split('","')
-            choices = choices.strip('"').split('","')
+        for line in fr:  # For each line in the file
+            examples, choices = line.strip().split('||')  # Separate examples and choices
+            examples = examples.strip('"').split('","')  # Remove quotes and separators to create a list of examples
+            choices = choices.strip('"').split('","')  # Remove quotes and separators to create a list of choices
             total_diff = 0
-            for example in examples:
+            for example in examples:  # For each example calculate the difference between vectors of the words
                 words = example.split(':')
                 total_diff += difference(words[1], words[0])
-            avg_diff = total_diff / len(examples)
+            avg_diff = total_diff / len(examples)  # Calculate the average difference for all examples
             similarities = []
-            for choice in choices:
+            for choice in choices:  # For each choice
                 words = choice.split(':')
-                diff = difference(words[1], words[0])
-                similarities.append(cossim(diff, avg_diff))
-            most_illustrative = choices[similarities.index(max(similarities))]
-            least_illustrative = choices[similarities.index(min(similarities))]
+                diff = difference(words[1], words[0])  # Calculate the difference between vectors of the words
+                similarities.append(cossim(diff, avg_diff))  # Store the similarity of difference with avg difference
+            most_illustrative = choices[similarities.index(max(similarities))]  # Find most similar choice
+            least_illustrative = choices[similarities.index(min(similarities))]  # Find least similar choice
             choices.extend([most_illustrative, least_illustrative])
             write_line = '"{0}"\n'.format('"\t"'.join(choices))
-            fw.write(write_line)
+            fw.write(write_line)  # Write the choices along with least and most similar choice to file
