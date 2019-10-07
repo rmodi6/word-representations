@@ -155,22 +155,24 @@ def generate_batch(data, batch_size, num_skips, skip_window):
 
   ===============================================================================
   """
+  # Initialize batch_count to 0
   batch_count = 0
-  while batch_count < batch_size:
+  while batch_count < batch_size:  # Continue while we haven't generated required number of batches
+    # Re-initialize data_index so that there are skip_window words on either side of data_index
     if (data_index - skip_window) < 0 or (data_index + skip_window) >= len(data):
       data_index = skip_window
-    left_context_word = data_index - 1
-    right_context_word = data_index + 1
-    for x in range(skip_window):
-      batch[batch_count] = data[data_index]
-      labels[batch_count, 0] = data[left_context_word]
-      batch[batch_count+1] = data[data_index]
-      labels[batch_count+1, 0] = data[right_context_word]
-      batch_count += 2
-      left_context_word -= 1
-      right_context_word += 1
-    data_index += 1
-  return batch, labels
+    left_context_word = data_index - 1  # Index for outer words on left side of data_index
+    right_context_word = data_index + 1  # Index for outer words on right side of data_index
+    for x in range(skip_window):  # Loop skip_window times
+      batch[batch_count] = data[data_index]  # Add data_index word to batch as center word
+      labels[batch_count, 0] = data[left_context_word]  # Add left index word to labels as target word
+      batch[batch_count+1] = data[data_index]  # Add data_index word to batch as center word
+      labels[batch_count+1, 0] = data[right_context_word]  # Add right index word to labels as target word
+      batch_count += 2  # Increment batch_count by 2 as we added 2 words: one from left and one from right
+      left_context_word -= 1  # Move left index towards left
+      right_context_word += 1  # Move right index towards right
+    data_index += 1  # Increment data_index making next word as center word
+  return batch, labels  # Return the generated batches and labels
 
 
 def build_model(sess, graph, loss_model):
