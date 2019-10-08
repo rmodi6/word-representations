@@ -31,9 +31,21 @@ v1 = embeddings[dictionary[word_id]]
 
 
 def cossim(v1, v2):
+    '''
+    Returns the cosine similarity between two vectors A and B defined as A.B/(||A||*||B||)
+    :param v1: vector 1
+    :param v2: vector 2
+    :return: cosine similarity of v1 and v2
+    '''
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 def difference(word1, word2):
+    '''
+    Returns the difference vector between two words
+    :param word1: first word
+    :param word2: second word
+    :return: vector(word1) - vector(word2)
+    '''
     v1 = embeddings[dictionary[word1]]
     v2 = embeddings[dictionary[word2]]
     return np.subtract(v1, v2)
