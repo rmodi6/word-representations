@@ -6,6 +6,15 @@
 **Note:** All the word2vec models are trained using tensorflow-gpu=1.14 and python=2.7 while all the nce models are 
 trained using tensorflow=1.9 and python=2.7
 
+**Models Link:** https://drive.google.com/drive/folders/1O6qngIvG7vPjg25XO9pwNsKeLXTiPPCw?usp=sharing
+
+**Best Models:** 
+- **Cross Entropy:** The best model for cross entropy loss was generated using an embedding size of 64 and training 
+the model from scratch for 4 million steps without loading the pre-trained vectors.
+- **NCE:** The best model for nce loss was created by increasing the window size. The value for skip_window was 8 and 
+that for num_skips was 16. The training was continued from the pre-trained model for 200000 steps with all other 
+parameters same.
+
 ### Implementations
 #### Batch Generation
 The basic algorithm to generate the batches is such that the global variable `data_index` keeps track of the last word 
