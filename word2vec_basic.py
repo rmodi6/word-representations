@@ -325,18 +325,16 @@ if __name__ == '__main__':
   filename = maybe_download('text8.zip', 31344016)
 
 
-  # words = read_data(filename)
-  # print('Data size', len(words))
+  words = read_data(filename)
+  print('Data size', len(words))
 
 
   ####################################################################################
   # Step 2: Build the dictionary and replace rare words with UNK token.
   vocabulary_size = 100000 
 
-  # data, count, dictionary, reverse_dictionary = build_dataset(words)
-  import joblib
-  data, count, dictionary, reverse_dictionary = joblib.load('dumps/data.pkl')
-  # del words  # Hint to reduce memory.
+  data, count, dictionary, reverse_dictionary = build_dataset(words)
+  del words  # Hint to reduce memory.
   print('Most common words (+UNK)', count[:5])
   print('Sample data', data[:10], [reverse_dictionary[i] for i in data[:10]])
 
